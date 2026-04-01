@@ -176,3 +176,39 @@ Alloy nhận trace → đảm bảo Alloy đang expose port 4317 (gRPC) và có 
 Bạn thử deploy theo hướng dẫn này đi.
 Nếu gặp lỗi (ví dụ module không load, hoặc image sidecar chưa có module), hãy paste lỗi cụ thể + output của kubectl describe pod + version Nginx của image gốc, tao sẽ debug và chỉnh lại cho bạn.
 Bạn muốn tao điều chỉnh phần nào không? (ví dụ: dùng HTTP OTLP thay vì gRPC, hoặc thêm logging, hoặc sampling).
+
+
+
+----------------------------------------------------------------------
+
+The njs dynamic modules for nginx have been installed.
+To enable these modules, add the following to /etc/nginx/nginx.conf
+and reload nginx:
+
+    load_module modules/ngx_http_js_module.so;
+    load_module modules/ngx_stream_js_module.so;
+
+Please refer to the modules documentation for further details:
+https://nginx.org/en/docs/njs/
+https://nginx.org/en/docs/http/ngx_http_js_module.html
+https://nginx.org/en/docs/stream/ngx_stream_js_module.html
+
+----------------------------------------------------------------------
+Setting up nginx-module-otel (1.28.3+0.1.2-1~bookworm) ...
+----------------------------------------------------------------------
+
+The OpenTelemetry dynamic module for nginx has been installed.
+To enable this module, add the following to /etc/nginx/nginx.conf
+and reload nginx:
+
+    load_module modules/ngx_otel_module.so;
+
+----------------------------------------------------------------------
+Processing triggers for libc-bin (2.36-9+deb12u10) ...
+ ---> Removed intermediate container e27cbd50fc1d
+ ---> 2a3c026fb6fe
+Step 3/5 : RUN echo "load_module modules/ngx_otel_module.so;" > /etc/nginx/modules-enabled/50-mod-otel.conf
+ ---> Running in 9f35a5ddd245
+/bin/sh: 1: cannot create /etc/nginx/modules-enabled/50-mod-otel.conf: Directory nonexistent
+The command '/bin/sh -c echo "load_module modules/ngx_otel_module.so;" > /etc/nginx/modules-enabled/50-mod-otel.conf' returned a non-zero code: 2
+beluga_sys@bastion-theme-dev:~$ 
