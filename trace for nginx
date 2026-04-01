@@ -1,0 +1,172 @@
+Dưới đây là hướng dẫn chi tiết cách 2: Sử dụng Nginx sidecar (reverse proxy) để thêm OpenTelemetry tracing mà không cần sửa image gốc của bạn.
+Ý tưởng:
+Giữ nguyên container Nginx chính (image bạn nhận được, gọi là nginx-main).
+Thêm một container thứ hai (nginx-otel-proxy) chạy Nginx có hỗ trợ OTel, đóng vai trò reverse proxy ở phía trước.
+Toàn bộ traffic vào pod sẽ đi qua sidecar proxy → tạo trace → forward sang nginx-main.
+Bước 1: Tạo ConfigMap cho Nginx sidecar (có OTel)
+Tạo file nginx-otel-proxy-config.yaml:
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-otel-proxy-config
+  namespace: default   # thay bằng namespace của bạn
+data:
+  nginx.conf: |
+    load_module modules/ngx_otel_module.so;   # Module OTel (sẽ mount hoặc dùng image có sẵn)
+
+    events {
+        worker_connections 1024;
+    }
+
+    http {
+        # ====================== OpenTelemetry Config ======================
+        otel_exporter {
+            endpoint "alloy.monitoring.svc.cluster.local:4317";   # Thay bằng service Alloy của bạn (gRPC)
+            # endpoint "http://alloy.monitoring.svc.cluster.local:4318"; nếu dùng HTTP
+        }
+
+        otel_service_name "nginx-proxy";     # Tên service hiển thị trong Tempo/Grafana
+        otel_span_name "nginx $request_method $uri";
+
+        # Sampling (tùy chọn): trace 100% hoặc chỉ 10%
+        # otel_sampler "TraceIdRatioBased";
+        # otel_sampler_ratio "0.1";
+
+        server {
+            listen 80 default_server;
+            server_name _;
+
+            # Bật tracing và propagate context (rất quan trọng cho end-to-end trace)
+            location / {
+                otel_trace on;
+                otel_trace_context propagate;
+
+                # Forward request sang container Nginx gốc (nginx-main)
+                proxy_pass http://127.0.0.1:8080;   # nginx-main listen port 8080
+
+                # Forward các header trace thông thường
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+
+                # Tăng timeout nếu backend chậm
+                proxy_read_timeout 60s;
+                proxy_send_timeout 60s;
+            }
+
+            # Health check cho sidecar (tùy chọn)
+            location /healthz {
+                return 200 "ok\n";
+                access_log off;
+            }
+        }
+    }
+Lưu ý:
+Nếu image sidecar của bạn chưa có ngx_otel_module.so, bạn cần build một image sidecar nhẹ (chỉ chứa Nginx + module). Tao có thể hướng dẫn build riêng nếu cần.
+Hiện tại (2026), cách phổ biến là build sidecar image dựa trên nginx:1.27 + install nginx-module-otel.
+Bước 2: Tạo image cho sidecar (nếu chưa có)
+Tạo Dockerfile-sidecar đơn giản:
+FROM nginx:1.27
+
+RUN apt-get update && apt-get install -y curl gnupg2 ca-certificates \
+    && curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor -o /etc/apt/trusted.gpg.d/nginx.gpg \
+    && echo "deb https://nginx.org/packages/debian/ $(cat /etc/debian_version | cut -d/ -f1) nginx" > /etc/apt/sources.list.d/nginx.list \
+    && apt-get update \
+    && apt-get install -y nginx-module-otel \
+    && rm -rf /var/lib/apt/lists/*
+
+# Load module tự động
+RUN echo "load_module modules/ngx_otel_module.so;" > /etc/nginx/modules-enabled/50-mod-otel.conf
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+Build và push:
+docker build -t your-repo/nginx-otel-sidecar:1.27 -f Dockerfile-sidecar .
+docker push your-repo/nginx-otel-sidecar:1.27
+Bước 3: Deploy Deployment với 2 containers (sidecar pattern)
+Tạo file nginx-with-otel-sidecar.yaml:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-app-with-otel
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx-app
+  template:
+    metadata:
+      labels:
+        app: nginx-app
+    spec:
+      containers:
+      - name: nginx-main                  # ← Image gốc của bạn (không thay đổi)
+        image: your-original-nginx-image:tag   # Image bạn chỉ nhận được
+        ports:
+        - containerPort: 8080             # Nginx gốc listen port nội bộ (thay đổi nếu cần)
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+
+      - name: nginx-otel-proxy            # ← Sidecar có OTel
+        image: your-repo/nginx-otel-sidecar:1.27
+        ports:
+        - containerPort: 80               # Port expose ra ngoài (Service sẽ trỏ vào đây)
+        volumeMounts:
+        - name: otel-config
+          mountPath: /etc/nginx
+          readOnly: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+
+      volumes:
+      - name: otel-config
+        configMap:
+          name: nginx-otel-proxy-config
+          items:
+          - key: nginx.conf
+            path: nginx.conf
+Bước 4: Tạo Service trỏ vào sidecar
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-app-service
+  namespace: default
+spec:
+  selector:
+    app: nginx-app
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80          # Trỏ vào port 80 của nginx-otel-proxy
+    protocol: TCP
+Bước 5: Apply và kiểm tra
+kubectl apply -f nginx-otel-proxy-config.yaml
+kubectl apply -f nginx-with-otel-sidecar.yaml
+kubectl apply -f nginx-app-service.yaml
+Kiểm tra:
+kubectl get pods -l app=nginx-app → phải thấy 2 containers Running.
+kubectl logs <pod-name> -c nginx-otel-proxy
+Truy cập service: curl http://nginx-app-service hoặc qua Ingress/LoadBalancer.
+Vào Grafana → Explore → Tempo → search trace → bạn sẽ thấy span từ nginx-proxy.
+Ưu nhược điểm của cách này
+Ưu điểm:
+Không động vào image gốc.
+Dễ config tracing riêng cho layer proxy.
+Propagate trace context tốt → backend (nếu có OTel) sẽ nhận được traceparent.
+Nhược điểm:
+Thêm 1 hop nội bộ (latency tăng rất nhẹ, thường < 2ms).
+Pod tiêu tốn tài nguyên hơn một chút.
+Mẹo tối ưu
+Nếu nginx-main của bạn listen port 80 → đổi thành 8080 hoặc 9000 để tránh conflict.
+Muốn trace cả response time của backend → cấu hình proxy_set_header đầy đủ và bật otel_trace ở location.
+Nếu traffic cao → dùng sampling ratio 0.1 hoặc 0.01 trong config OTel.
+Alloy nhận trace → đảm bảo Alloy đang expose port 4317 (gRPC) và có pipeline xử lý traces.
+Bạn thử deploy theo hướng dẫn này đi.
+Nếu gặp lỗi (ví dụ module không load, hoặc image sidecar chưa có module), hãy paste lỗi cụ thể + output của kubectl describe pod + version Nginx của image gốc, tao sẽ debug và chỉnh lại cho bạn.
+Bạn muốn tao điều chỉnh phần nào không? (ví dụ: dùng HTTP OTLP thay vì gRPC, hoặc thêm logging, hoặc sampling).
