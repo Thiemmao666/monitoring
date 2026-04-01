@@ -66,17 +66,23 @@ Lưu ý:
 Nếu image sidecar của bạn chưa có ngx_otel_module.so, bạn cần build một image sidecar nhẹ (chỉ chứa Nginx + module). Tao có thể hướng dẫn build riêng nếu cần.
 Hiện tại (2026), cách phổ biến là build sidecar image dựa trên nginx:1.27 + install nginx-module-otel.
 Bước 2: Tạo image cho sidecar (nếu chưa có)
-Tạo Dockerfile-sidecar đơn giản:
+Tạo Dockerfile-sidecar 
 FROM nginx:1.27
 
-RUN apt-get update && apt-get install -y curl gnupg2 ca-certificates \
-    && curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor -o /etc/apt/trusted.gpg.d/nginx.gpg \
-    && echo "deb https://nginx.org/packages/debian/ $(cat /etc/debian_version | cut -d/ -f1) nginx" > /etc/apt/sources.list.d/nginx.list \
+# Cài đặt repo NGINX chính thức + module OTel
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    gnupg2 \
+    ca-certificates \
+    lsb-release \
+    debian-archive-keyring \
+    && curl -fsSL https://nginx.org/keys/nginx_signing.key | gpg --dearmor -o /usr/share/keyrings/nginx-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] https://nginx.org/packages/debian $(lsb_release -cs) nginx" > /etc/apt/sources.list.d/nginx.list \
     && apt-get update \
     && apt-get install -y nginx-module-otel \
     && rm -rf /var/lib/apt/lists/*
 
-# Load module tự động
+# Load module tự động (đúng theo docs chính thức của NGINX)
 RUN echo "load_module modules/ngx_otel_module.so;" > /etc/nginx/modules-enabled/50-mod-otel.conf
 
 EXPOSE 80
