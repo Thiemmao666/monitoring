@@ -1,0 +1,34 @@
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason                  Age                   From                     Message
+  ----     ------                  ----                  ----                     -------
+  Normal   Pulled                  13m                   kubelet                  Container image "sg-docker-local.bart.sec.samsung.net/mcc/stg/frontend:2.1.2.260128-perf-stg" already present on machine
+  Normal   Created                 13m                   kubelet                  Created container mcc-frontend
+  Normal   Started                 13m                   kubelet                  Started container mcc-frontend
+  Normal   Created                 12m (x4 over 13m)     kubelet                  Created container nginx-otel-proxy
+  Normal   Started                 12m (x4 over 13m)     kubelet                  Started container nginx-otel-proxy
+  Normal   Pulled                  11m (x5 over 13m)     kubelet                  Container image "docker.io/library/nginx-otel-sidecar:1.27_2" already present on machine
+  Warning  FailedScheduling        9m9s                  default-scheduler        0/8 nodes are available: 2 node(s) didn't satisfy existing pods anti-affinity rules, 2 node(s) had untolerated taint {node-role.kubernetes.io/control-plane: }, 4 node(s) didn't match Pod's node affinity/selector. preemption: 0/8 nodes are available: 2 No preemption victims found for incoming pod, 6 Preemption is not helpful for scheduling.
+  Normal   Scheduled               9m7s                  default-scheduler        Successfully assigned mcc/frontend-deployment-7ff95b6ff-hxmr5 to stg-worker01
+  Normal   SuccessfulAttachVolume  9m6s                  attachdetach-controller  AttachVolume.Attach succeeded for volume "pvc-973d1513-1b90-44da-a8a9-5c4e3ec3ec44"
+  Warning  BackOff                 8m19s (x26 over 13m)  kubelet                  Back-off restarting failed container nginx-otel-proxy in pod frontend-deployment-7ff95b6ff-hxmr5_mcc(9ba072b9-7439-452d-9be7-3f5ada558949)
+a@stg-master01:~$ kl po 
+error: error from server (NotFound): pods "po" not found in namespace "mcc"
+a@stg-master01:~$ kl frontend-deployment-7ff95b6ff-hxmr5
+Defaulted container "mcc-frontend" out of: mcc-frontend, nginx-otel-proxy
+/docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+/docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+10-listen-on-ipv6-by-default.sh: info: IPv6 listen already enabled
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+/docker-entrypoint.sh: Configuration complete; ready for start up
+2026/04/02 11:38:41 [notice] 1#1: using the "epoll" event method
+2026/04/02 11:38:41 [notice] 1#1: nginx/1.23.4
+2026/04/02 11:38:41 [notice] 1#1: built by gcc 10.2.1 20210110 (Debian 10.2.1-6) 
+2026/04/02 11:38:41 [notice] 1#1: OS: Linux 5.15.0-141-generic
+2026/04/02 11:38:41 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1048576:1048576
+2026/04/02 11:38:41 [notice] 1#1: start worker processes
+2026/04/02 11:38:41 [notice] 1#1: start worker process 22
+2026/04/02 11:38:41 [notice] 1#1: start worker process 23
+a@stg-master01:~$ 
