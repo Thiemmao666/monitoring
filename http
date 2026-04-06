@@ -1,0 +1,2 @@
+POST http://gateway.mcc-stg.svmcdevops.com/material-service/api/material/transaction/create-by-orders-and-quantity?storeId=6
+{"packageType":"UNIT","orderIds":[4565746],"mapQuantity":{"GH96-20500A":{"quantity":99999,"remark":""}},"standard":null}
