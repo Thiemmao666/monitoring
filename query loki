@@ -1,0 +1,18 @@
+// 1. Chỉ hiện query đang chạy hoặc vừa chạy (có query text + start/end time)
+{job="integrations/postgres"} 
+| state!="idle" 
+| json 
+| query != "" 
+| line_format "{{.query}} | duration={{.query_time}} | start={{.query_start}} | state={{.state}}"
+
+// 2. Query bị lỗi hoặc bị hủy (rất quan trọng)
+{job="integrations/postgres"} 
+| json 
+| (error != "" or state="idle in transaction" or state="canceled") 
+| line_format "❌ QUERY LỖI / HỦY: {{.query}} | duration={{.query_time}} | error={{.error}}"
+
+// 3. Top query chậm nhất (có start & end time)
+{job="integrations/postgres"} 
+| json 
+| query_time > 100ms 
+| line_format "{{.query}} → {{.query_time}} (started at {{.query_start}})"
