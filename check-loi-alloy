@@ -8,3 +8,28 @@ Error: /etc/alloy/config.alloy:75:1: component "database_observability.postgres"
 76 |   data_source_name = ["postgresql://" + remote.kubernetes.secret.postgres_credentials.data["PGPOOL_POSTGRES_USERNAME"] + ":" + remote.kubernetes.secret.postgres_credentials.data["PGPOOL_POSTGRES_PASSWORD"] + "@postgres-0.postgres-headless.mcc.svc.cluster.local:5432/postgres?sslmode=disable"]
 interrupt received
 Error: could not perform the initial load successfully
+
+
+Error: /etc/alloy/config.alloy:60:1: Failed to build component: building component: failed to create postgres_exporter collector: requested to enable an unknown collector: activity
+
+59 |   
+60 |   prometheus.exporter.postgres "postgres_exporter" {
+   |  _^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+61 | |   data_source_names = ["postgresql://" + remote.kubernetes.secret.postgres_credentials.data["PGPOOL_POSTGRES_USERNAME"] + ":" + remote.kubernetes.secret.postgres_credentials.data["PGPOOL_POSTGRES_PASSWORD"] + "@postgres-0.postgres-headless.mcc.svc.cluster.local:5432/postgres?sslmode=disable"]
+62 | |   autodiscovery {
+63 | |     enabled = true
+64 | |   }
+65 | |   enabled_collectors = ["stat_statements", "activity", "locks", "database"]
+66 | |   custom_queries_config_path = "/hostfs/opt/custom-queries.yaml"
+67 | | }
+   | |_^
+68 |   // prometheus.exporter.postgres "postgres_exporter_second" {
+
+Error: /etc/alloy/config.alloy:76:22: ["postgresql://" + remote.kubernetes.secret.postgres_credentials.data["PGPOOL_POSTGRES_USERNAME"] + ":" + remote.kubernetes.secret.postgres_credentials.data["PGPOOL_POSTGRES_PASSWORD"] + "@postgres-0.postgres-headless.mcc.svc.cluster.local:5432/postgres?sslmode=disable"] should be capsule, got array
+
+75 | database_observability.postgres "main" {
+76 |   data_source_name = ["postgresql://" + remote.kubernetes.secret.postgres_credentials.data["PGPOOL_POSTGRES_USERNAME"] + ":" + remote.kubernetes.secret.postgres_credentials.data["PGPOOL_POSTGRES_PASSWORD"] + "@postgres-0.postgres-headless.mcc.svc.cluster.local:5432/postgres?sslmode=disable"]
+   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+77 | 
+
+ts=2026-04-08T07:10:13.342529887Z level=debug msg="finished node evaluation" controller_path=/ controller_id="" node_id=pyroscope.java.java duration=182.87µs
