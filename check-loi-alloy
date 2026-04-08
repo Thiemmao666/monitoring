@@ -1,0 +1,10 @@
+a@stg-master01:~/app-main/appapp-appyaml/alloy$ kl alloy-1
+
+Error: /etc/alloy/config.alloy:75:1: component "database_observability.postgres" is at stability level "public-preview", which is below the minimum allowed stability level "generally-available". Use --stability.level command-line flag to enable "public-preview" features
+
+74 | 
+75 | database_observability.postgres "main" {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+76 |   data_source_name = ["postgresql://" + remote.kubernetes.secret.postgres_credentials.data["PGPOOL_POSTGRES_USERNAME"] + ":" + remote.kubernetes.secret.postgres_credentials.data["PGPOOL_POSTGRES_PASSWORD"] + "@postgres-0.postgres-headless.mcc.svc.cluster.local:5432/postgres?sslmode=disable"]
+interrupt received
+Error: could not perform the initial load successfully
