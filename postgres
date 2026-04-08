@@ -1,0 +1,6 @@
+postgresql-repmgr 10:53:33.96 INFO  ==> ** PostgreSQL with Replication Manager setup finished! **
+
+postgresql-repmgr 10:53:34.01 INFO  ==> Starting PostgreSQL in background...
+server starting
+2026-04-08 03:53:34 GMT::@:[144]: FATAL:  could not access file "repmgr, pgaudit, pg_stat_statements": No such file or directory
+2026-04-08 03:53:34 GMT::@:[144]: LOG:  database system is shut down
