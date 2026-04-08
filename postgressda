@@ -1,0 +1,108 @@
+✅ Hướng dẫn CHI TIẾT triển khai database_observability.postgres (Alloy native)
+Đây là cách mạnh nhất hiện tại (2026) để có:
+Realtime query samples + current duration (thời gian query đang chạy)
+Explain plans tự động
+Query fingerprint
+Lock analysis, schema change, top queries…
+Lưu ý: Đây là component open-source của Grafana Alloy (không phải Grafana Cloud).
+Bước 1: Chuẩn bị trong PostgreSQL (chạy 1 lần)
+Chạy các lệnh SQL dưới đây bằng user postgres hoặc superuser:
+-- 1. Tạo user monitor (chỉ đọc, an toàn)
+CREATE USER monitor_user WITH PASSWORD 'VeryStrongPassword123!';
+GRANT pg_monitor TO monitor_user;
+
+-- 2. Bật extension cần thiết
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+CREATE EXTENSION IF NOT EXISTS pg_tracing;        -- (tùy chọn, nếu muốn trace)
+
+-- 3. Config tối ưu cho observability
+ALTER SYSTEM SET shared_preload_libraries = 'pg_stat_statements';
+ALTER SYSTEM SET pg_stat_statements.track = 'all';
+ALTER SYSTEM SET pg_stat_statements.max = 20000;
+ALTER SYSTEM SET pg_stat_statements.track_utility = off;
+ALTER SYSTEM SET compute_query_id = on;
+
+-- Reload config
+SELECT pg_reload_conf();
+Mẹo: Dùng Secret trong Kubernetes để lưu password thay vì hardcode.
+Bước 2: Tạo Secret cho connection string (khuyến nghị)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-monitor-secret
+  namespace: monitoring          # hoặc namespace của Alloy
+type: Opaque
+stringData:
+  data_source_name: "postgres://monitor_user:VeryStrongPassword123!@postgres-service:5432/postgres?sslmode=disable"
+Bước 3: Config Grafana Alloy (River config)
+Thêm (hoặc thay thế) đoạn config sau vào file Alloy (thường là config.alloy hoặc values Helm).
+// ==================== DATABASE OBSERVABILITY POSTGRES ====================
+prometheus.exporter.postgres "main" {
+  data_source_name   = "postgres://monitor_user:VeryStrongPassword123!@postgres-service:5432/postgres?sslmode=disable"
+  enabled_collectors = ["stat_statements", "activity", "locks", "database"]
+}
+
+database_observability.postgres "main" {
+  data_source_name = "postgres://monitor_user:VeryStrongPassword123!@postgres-service:5432/postgres?sslmode=disable"
+
+  // Bật các collector quan trọng nhất
+  enable_collectors = ["query_samples", "explain_plans", "query_details"]
+
+  // Query samples realtime (current duration, query text đang chạy)
+  query_samples {
+    enabled = true
+    interval = "5s"          # lấy mẫu mỗi 5 giây
+  }
+
+  // Explain plans tự động
+  explain_plans {
+    enabled = true
+  }
+
+  // Forward logs (query samples + explain plans) → Loki
+  forward_to = [loki.write.grafana.input]
+
+  // Export metrics → Prometheus
+  targets = prometheus.exporter.postgres.main.targets
+}
+
+// (Nếu bạn đã có remote_write thì forward metrics như bình thường)
+prometheus.scrape "postgres" {
+  targets    = prometheus.exporter.postgres.main.targets
+  forward_to = [prometheus.remote_write.grafana.input]
+}
+Nếu bạn dùng Helm Grafana Alloy thì put đoạn trên vào alloy.configMap.content.
+Bước 4: Apply thay đổi
+# Nếu dùng ConfigMap
+kubectl apply -f alloy-configmap.yaml
+
+# Restart Alloy
+kubectl rollout restart deployment/alloy -n monitoring
+Bước 5: Dashboard trong Grafana Bitnami
+Import dashboard ID 24298 (PostgreSQL Monitoring Dashboard).
+Thêm panel Realtime Running Queries (Table):
+Query (Prometheus):
+topk(20, pg_stat_activity_duration_seconds{state="active"})
+Hoặc dùng PostgreSQL datasource (thêm datasource PostgreSQL) với SQL:
+SELECT 
+  pid, usename, datname, state,
+  now() - query_start AS duration,
+  query, wait_event
+FROM pg_stat_activity 
+WHERE state = 'active' 
+  AND pid <> pg_backend_pid()
+ORDER BY duration DESC;
+Trong dashboard 24298 bạn sẽ thấy:
+Top queries chậm (từ pg_stat_statements)
+Query samples + explain plan (từ database_observability)
+Lock & blocking queries realtime
+Kiểm tra hoạt động
+Vào Grafana → Explore → Loki → query:
+{job="integrations/postgres", component="database_observability"}
+Hoặc Prometheus: pg_stat_statements_total_exec_time
+Bạn sẽ thấy query samples hiện realtime với full query text, duration, explain plan.
+Bạn muốn tao đưa luôn:
+File YAML Helm values hoàn chỉnh?
+Cách kết hợp với Pgpool (log parsing)?
+Hoặc panel JSON mẫu cho realtime query?
+Cứ nói rõ version Postgres của bạn (14/15/16/17) và Alloy deploy kiểu gì (Helm hay bare config), tao sẽ tinh chỉnh chính xác hơn.
