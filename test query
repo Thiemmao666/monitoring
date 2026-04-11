@@ -1,0 +1,101 @@
+Hướng dẫn chi tiết: Tạo bảng test để kiểm tra chức năng Grafana + PostgreSQL
+Dưới đây là cách tạo bảng test đơn giản trong PostgreSQL để test đầy đủ chức năng của Grafana (kết nối Data Source, query Time Series, Table, Stat, Gauge, Alerting…).
+1. Tạo bảng test trong PostgreSQL (SQL)
+Kết nối vào PostgreSQL (dùng psql, pgAdmin, DBeaver…):
+-- 1. Tạo database (nếu chưa có)
+CREATE DATABASE grafana_test;
+
+-- 2. Kết nối vào database vừa tạo
+\c grafana_test
+
+-- 3. Tạo bảng test (có cột time để Grafana dùng làm Time Series)
+CREATE TABLE IF NOT EXISTS sensor_data (
+    id          SERIAL PRIMARY KEY,
+    time        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    metric      VARCHAR(50) NOT NULL,
+    value       DOUBLE PRECISION NOT NULL,
+    device_id   VARCHAR(30),
+    location    VARCHAR(50)
+);
+
+-- 4. Tạo Index để query nhanh (rất quan trọng khi test)
+CREATE INDEX idx_sensor_data_time ON sensor_data (time);
+CREATE INDEX idx_sensor_data_metric ON sensor_data (metric);
+
+-- 5. Insert dữ liệu test (khoảng 1-2 ngày dữ liệu)
+INSERT INTO sensor_data (time, metric, value, device_id, location)
+SELECT 
+    NOW() - INTERVAL '1 day' * (random() * 100)::int + INTERVAL '1 second' * (random() * 86400)::int,
+    metric,
+    20 + random() * 15,                    -- giá trị ngẫu nhiên 20\~35
+    'DEV-' || (random()*100)::int::text,
+    'Hanoi'
+FROM (
+    VALUES 
+        ('temperature'),
+        ('humidity'),
+        ('pressure'),
+        ('cpu_usage')
+) AS m(metric)
+CROSS JOIN generate_series(1, 500) AS x;   -- sinh ra \~2000 dòng
+
+-- Kiểm tra dữ liệu đã có chưa
+SELECT * FROM sensor_data ORDER BY time DESC LIMIT 10;
+2. Cấu hình Data Source trong Grafana
+Vào Grafana → Configuration (bánh răng) → Data sources → Add data source
+Chọn PostgreSQL
+Điền thông tin:
+Name: Postgres Test
+Host: localhost:5432 (hoặc IP + port của bạn)
+Database: grafana_test
+User: user bạn dùng (thường là postgres hoặc user bạn tạo)
+Password: …
+TLS/SSL Mode: disable (nếu test local) hoặc require
+Version: chọn phiên bản PostgreSQL của bạn (≥12 là tốt nhất)
+Nhấn Save & Test → Nếu hiện "Database connection OK" là thành công.
+3. Test các chức năng chính của Grafana
+Tạo một Dashboard mới → Add panel → Chọn data source Postgres Test
+Panel 1: Time Series (đồ thị đường)
+SELECT 
+    time AS "time",
+    value AS "Temperature",
+    device_id AS "device"
+FROM sensor_data
+WHERE 
+    $__timeFilter(time) 
+    AND metric = 'temperature'
+ORDER BY time
+Panel 2: Table
+SELECT 
+    time,
+    metric,
+    value,
+    device_id,
+    location
+FROM sensor_data
+WHERE $__timeFilter(time)
+ORDER BY time DESC
+LIMIT 100
+Panel 3: Stat / Gauge (giá trị hiện tại)
+SELECT 
+    value AS "Current Temp"
+FROM sensor_data
+WHERE metric = 'temperature'
+ORDER BY time DESC
+LIMIT 1
+Panel 4: Test Alerting
+Sử dụng query trên và tạo alert: value > 32 trong 5 phút.
+Mẹo nhanh để test nhiều chức năng hơn
+Muốn test Annotation (ghi chú trên đồ thị):
+Tạo bảng annotations và dùng query annotation trong Grafana.
+Muốn test Variable (dropdown):
+Tạo variable kiểu Query:
+SELECT DISTINCT location FROM sensor_data
+Muốn test Transform và Join:
+Tạo thêm 1-2 bảng nữa (ví dụ device_info).
+Bạn chỉ cần chạy 5 câu SQL ở phần 1 là đã có bảng test rất đầy đủ để thử hầu hết các chức năng của Grafana + Postgres.
+Bạn muốn mình cung cấp luôn:
+Script SQL đầy đủ hơn (có annotation + nhiều metric)?
+Cách test Alerting chi tiết?
+Hoặc cách dùng TimescaleDB (nếu bạn muốn performance cao hơn)?
+Cứ nói mình biết nhé!
