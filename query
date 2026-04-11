@@ -81,3 +81,70 @@ Gửi luôn JSON của panel để import 1 click?
 Thêm Alerting (báo động khi có blocking > 30 giây)?
 Hay biến nó thành đồ thị theo thời gian (lịch sử blocking)?
 Cứ nói mình biết nhé! 🔥
+
+
+✅ Đã hiểu!
+Bạn muốn tạo query test blocking để kiểm tra panel Grafana (query detect blocking bạn vừa paste).
+Dưới đây là bộ query test đơn giản, an toàn, dễ chạy để tạo tình huống blocking thật sự, sau đó panel Grafana sẽ hiển thị ngay (và refresh mỗi 1 phút như bạn đã setup).
+📌 Hướng dẫn chạy test (2 session riêng biệt)
+Mở 2 cửa sổ terminal/psql/pgAdmin/DBeaver cùng lúc (kết nối cùng database grafana_test).
+Session 1 (Giữ lock - Blocking session)
+Chạy lần lượt các lệnh sau:
+-- 1. Tạo bảng test lock (chạy 1 lần thôi)
+CREATE TABLE IF NOT EXISTS lock_test (
+    id SERIAL PRIMARY KEY,
+    name TEXT
+);
+
+-- 2. Chèn dữ liệu mẫu
+INSERT INTO lock_test (name) VALUES ('Test Row 1');
+
+-- 3. Bắt đầu transaction và giữ lock (KHÔNG COMMIT)
+BEGIN;
+UPDATE lock_test 
+SET name = 'Locked by Session 1' 
+WHERE id = 1;
+
+-- Đừng COMMIT hoặc ROLLBACK ở đây → session này sẽ giữ lock
+Để lại session 1 đang chạy (transaction chưa commit).
+Session 2 (Bị block - Blocked session)
+Chạy lệnh này trong session thứ 2:
+-- Session 2: Cố gắng update cùng dòng → sẽ bị block
+BEGIN;
+UPDATE lock_test 
+SET name = 'Trying to lock...' 
+WHERE id = 1;
+
+-- Lệnh này sẽ "treo" (blocked) cho đến khi Session 1 commit/rollback
+Kết quả mong đợi trong Grafana
+Sau khi chạy xong:
+Quay lại Grafana → panel Blocking Sessions của bạn.
+Đợi 1 phút (auto refresh) hoặc nhấn Refresh.
+Bạn sẽ thấy 1 dòng hiện ra:
+blocked_pid
+blocked_user
+blocked_query
+blocking_pid
+blocking_user
+blocked_duration
+xxxx
+youruser
+UPDATE lock_test ...
+yyyy
+youruser
+00:00:15...
+→ blocked_duration sẽ tăng dần theo thời gian (đây là “thời gian thực” bạn muốn).
+Dọn dẹp sau khi test (rất quan trọng)
+Khi test xong, quay lại Session 1 chạy lệnh sau để giải phóng lock:
+COMMIT;   -- hoặc ROLLBACK;
+Sau đó Session 2 sẽ tự chạy tiếp và bạn có thể COMMIT nó luôn.
+Bonus: Query test nhanh chỉ 1 lệnh (nếu bạn lười mở 2 session)
+Nếu muốn test siêu nhanh, chạy trong Session 1:
+BEGIN;
+SELECT pg_sleep(60);  -- giữ lock 60 giây
+-- sau đó mở session 2 chạy query update lock_test
+Bạn có muốn mình:
+Thêm query test nhiều blocking cùng lúc?
+Tạo bảng + function tự động sinh blocking mỗi lần chạy?
+Hay thêm cột blocked_since vào panel Grafana để hiển thị thời gian bắt đầu block?
+Cứ nói mình biết, mình tạo thêm ngay! 🔥
