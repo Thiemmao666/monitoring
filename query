@@ -14,26 +14,70 @@ WHERE NOT blocked_locks.granted
 ORDER BY blocked_duration DESC;
 
 
-SELECT
-  $__timeGroup(now(), '1m') AS time,
-  count(*) AS blocked_count
+✅ Đã hiểu!
+Bạn muốn query Blocking Locks (query bạn vừa paste) chạy tự động mỗi 1 phút 1 lần và hiển thị kết quả thời gian thực (live) trong Grafana.
+Dưới đây là hướng dẫn chi tiết, chính xác từng bước (áp dụng ngay cho query bạn đưa):
+1. Tạo / Chỉnh sửa Panel (nếu chưa có)
+Mở Dashboard của bạn.
+Nhấn Add panel (hoặc Edit panel Blocking Locks nếu đã có).
+Chọn Data source là PostgreSQL (Postgres Test).
+Paste nguyên query bạn đưa vào ô Query (hoặc dùng query đã format đẹp hơn ở dưới để dễ đọc).
+Query đã format sạch + thêm 2 cột hữu ích (khuyến nghị dùng luôn):
+SELECT 
+    blocked.pid                  AS blocked_pid,
+    blocked.usename              AS blocked_user,
+    blocked.query                AS blocked_query,
+    blocked.state                AS blocked_state,
+    blocking.pid                 AS blocking_pid,
+    blocking.usename             AS blocking_user,
+    blocking.query               AS blocking_query,
+    blocking.state               AS blocking_state,
+    age(now(), blocked.query_start) AS blocked_duration,
+    blocked.wait_event_type,
+    blocked.wait_event
 FROM pg_catalog.pg_locks blocked_locks
-JOIN pg_catalog.pg_stat_activity blocked 
-  ON blocked.pid = blocked_locks.pid
+JOIN pg_catalog.pg_stat_activity blocked ON blocked.pid = blocked_locks.pid
 JOIN pg_catalog.pg_locks blocking_locks 
-  ON blocking_locks.locktype = blocked_locks.locktype
- AND blocking_locks.database IS NOT DISTINCT FROM blocked_locks.database
- AND blocking_locks.relation IS NOT DISTINCT FROM blocked_locks.relation
- AND blocking_locks.page IS NOT DISTINCT FROM blocked_locks.page
- AND blocking_locks.tuple IS NOT DISTINCT FROM blocked_locks.tuple
- AND blocking_locks.virtualxid IS NOT DISTINCT FROM blocked_locks.virtualxid
- AND blocking_locks.transactionid IS NOT DISTINCT FROM blocked_locks.transactionid
- AND blocking_locks.classid IS NOT DISTINCT FROM blocked_locks.classid
- AND blocking_locks.objid IS NOT DISTINCT FROM blocked_locks.objid
- AND blocking_locks.objsubid IS NOT DISTINCT FROM blocked_locks.objsubid
- AND blocking_locks.pid != blocked_locks.pid
-JOIN pg_catalog.pg_stat_activity blocking 
-  ON blocking.pid = blocking_locks.pid
+    ON blocking_locks.locktype = blocked_locks.locktype
+   AND blocking_locks.database IS NOT DISTINCT FROM blocked_locks.database
+   AND blocking_locks.relation IS NOT DISTINCT FROM blocked_locks.relation
+   AND blocking_locks.page IS NOT DISTINCT FROM blocked_locks.page
+   AND blocking_locks.tuple IS NOT DISTINCT FROM blocked_locks.tuple
+   AND blocking_locks.virtualxid IS NOT DISTINCT FROM blocked_locks.virtualxid
+   AND blocking_locks.transactionid IS NOT DISTINCT FROM blocked_locks.transactionid
+   AND blocking_locks.classid IS NOT DISTINCT FROM blocked_locks.classid
+   AND blocking_locks.objid IS NOT DISTINCT FROM blocked_locks.objid
+   AND blocking_locks.objsubid IS NOT DISTINCT FROM blocked_locks.objsubid
+   AND blocking_locks.pid != blocked_locks.pid
+JOIN pg_catalog.pg_stat_activity blocking ON blocking.pid = blocking_locks.pid
 WHERE NOT blocked_locks.granted
-GROUP BY time
-ORDER BY time;
+ORDER BY blocked_duration DESC;
+2. Cài đặt chạy mỗi 1 phút + Thời gian thực
+Trong panel đang edit, chuyển sang tab Query options (ở dưới cùng bên trái).
+Điền các thông số sau:
+Refresh → chọn 1m (hoặc gõ 1m)
+Max data points → để mặc định (hoặc 1000)
+Cache timeout → để trống
+Nhấn Apply.
+3. Cài Auto Refresh cho cả Dashboard (bắt buộc)
+Ở góc trên bên phải dashboard, nhấn vào đồng hồ (Time range picker).
+Chọn Auto refresh → 1m.
+Nếu không có 1m sẵn, nhấn Add custom interval → gõ 1m → Save.
+→ Từ giờ dashboard sẽ tự động chạy query mỗi 1 phút và cập nhật kết quả live.
+4. Tối ưu hiển thị (rất quan trọng để nhìn “thời gian thực”)
+Trong tab Field hoặc Overrides:
+Cột blocked_duration:
+Unit → Duration → Seconds (s)
+Color → Red nếu > 30s, Orange nếu > 10s
+Cột blocked_query và blocking_query → Cell display mode = Wrapped text
+Đổi tiêu đề panel thành: 🔴 LIVE - Blocking Sessions (refresh mỗi 1 phút)
+5. Kiểm tra
+Nhấn Save dashboard.
+Đợi 60 giây hoặc nhấn nút Refresh (mũi tên tròn).
+Bạn sẽ thấy bảng tự động cập nhật mỗi 1 phút mà không cần làm gì.
+Hoàn tất! Query của bạn giờ đã chạy mỗi 1 phút 1 lần và hiển thị thời gian thực.
+Bạn muốn mình:
+Gửi luôn JSON của panel để import 1 click?
+Thêm Alerting (báo động khi có blocking > 30 giây)?
+Hay biến nó thành đồ thị theo thời gian (lịch sử blocking)?
+Cứ nói mình biết nhé! 🔥
