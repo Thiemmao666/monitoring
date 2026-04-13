@@ -148,3 +148,62 @@ Thêm query test nhiều blocking cùng lúc?
 Tạo bảng + function tự động sinh blocking mỗi lần chạy?
 Hay thêm cột blocked_since vào panel Grafana để hiển thị thời gian bắt đầu block?
 Cứ nói mình biết, mình tạo thêm ngay! 🔥
+
+
+
+✅ Query đếm số cặp blocking locks (dùng cho Alarm / Alerting)
+Dưới đây là query tối ưu chỉ trả về 1 con số — số lượng cặp bị lock (blocking pairs) hiện tại.
+Query này được rút gọn từ query chi tiết bạn đang dùng, rất phù hợp để tạo Alert Rule trong Grafana.
+1. Query đếm số cặp bị lock (dùng cho Alert)
+SELECT 
+    COUNT(*) AS blocking_pairs
+FROM pg_catalog.pg_locks blocked_locks
+JOIN pg_catalog.pg_stat_activity blocked 
+    ON blocked.pid = blocked_locks.pid
+JOIN pg_catalog.pg_locks blocking_locks 
+    ON blocking_locks.locktype = blocked_locks.locktype
+   AND blocking_locks.database IS NOT DISTINCT FROM blocked_locks.database
+   AND blocking_locks.relation IS NOT DISTINCT FROM blocked_locks.relation
+   AND blocking_locks.page IS NOT DISTINCT FROM blocked_locks.page
+   AND blocking_locks.tuple IS NOT DISTINCT FROM blocked_locks.tuple
+   AND blocking_locks.virtualxid IS NOT DISTINCT FROM blocked_locks.virtualxid
+   AND blocking_locks.transactionid IS NOT DISTINCT FROM blocked_locks.transactionid
+   AND blocking_locks.classid IS NOT DISTINCT FROM blocked_locks.classid
+   AND blocking_locks.objid IS NOT DISTINCT FROM blocked_locks.objid
+   AND blocking_locks.objsubid IS NOT DISTINCT FROM blocked_locks.objsubid
+   AND blocking_locks.pid != blocked_locks.pid
+JOIN pg_catalog.pg_stat_activity blocking 
+    ON blocking.pid = blocking_locks.pid
+WHERE NOT blocked_locks.granted;
+Kết quả trả về:
+blocking_pairs = số lượng session đang bị block (mỗi cặp blocked ↔ blocking là 1).
+2. Cách dùng trong Grafana để tạo Alarm (cảnh báo)
+Mở panel Blocking Sessions của bạn (hoặc Add panel mới).
+Chọn Visualization = Stat (hoặc Table cũng được).
+Paste query đếm ở trên vào Query editor.
+Đặt Panel title: 🔴 Blocking Pairs (Current)
+Trong tab Field:
+Field blocking_pairs → Unit = None (hoặc Short)
+Color mode = Value (để đổi màu theo ngưỡng)
+Tạo Alert:
+Vào tab Alert (bên trái) → New alert rule
+Query: Chọn query blocking_pairs
+Condition: WHEN last() OF query IS ABOVE 0
+(hoặc > 1, > 2… tùy bạn)
+Evaluate every: 1m (đúng với auto refresh bạn đã set)
+For: 0s hoặc 30s (thời gian duy trì cảnh báo)
+Notification message:
+🚨 Có {{ $values.blocking_pairs }} cặp blocking lock trong database!
+Nhấn Save → Alert sẽ tự động kiểm tra mỗi 1 phút và gửi cảnh báo nếu có blocking.
+3. Bonus: Query đếm + hiển thị thời gian block dài nhất (khuyến nghị)
+Nếu bạn muốn alert mạnh hơn (không chỉ đếm số mà còn biết block lâu bao nhiêu):
+SELECT 
+    COUNT(*) AS blocking_pairs,
+    MAX(age(now(), blocked.query_start)) AS longest_block_duration
+FROM ... (giữ nguyên phần FROM và WHERE như query trên)
+Sau đó trong Alert bạn có thể set condition:
+blocking_pairs > 0 AND longest_block_duration > 30s
+Bạn muốn mình:
+Gửi luôn JSON panel + alert rule để import 1 click?
+Hay chỉnh threshold mặc định (ví dụ alert khi > 2 cặp hoặc block > 60s)?
+Cứ nói mình biết, mình chỉnh ngay cho bạn! 🔥
