@@ -1,0 +1,113 @@
+Có, hoàn toàn làm được – và giống hệt CloudWatch Query Insights / RDS Performance Insights của Amazon.
+Bạn muốn gom nhóm các câu query giống nhau (normalized: thay literal bằng $1, $2...) thành 1 group, rồi tính:
+Số lượng thực thi (calls)
+Tổng thời gian (total time)
+Thời gian trung bình (avg time)
+Tỷ lệ thành công / lỗi
+→ Đây chính là chức năng cốt lõi của pg_stat_statements + Grafana Alloy’s Database Observability.
+Alloy đã hỗ trợ sẵn (không cần tool ngoài), chỉ cần cấu hình thêm một chút.
+1. Bước 1: Bật pg_stat_statements trong Postgres (bắt buộc)
+Chạy 1 lần trong database bạn muốn monitor:
+-- 1. Bật extension
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+
+-- 2. Cấu hình (thêm vào postgresql.conf hoặc ALTER SYSTEM)
+ALTER SYSTEM SET pg_stat_statements.track = 'all';
+ALTER SYSTEM SET track_activity_query_size = 4096;
+ALTER SYSTEM SET pg_stat_statements.max = 10000;  -- tăng nếu nhiều query
+
+SELECT pg_reload_conf();
+Tạo user monitor (nếu chưa có):
+CREATE USER db_o11y WITH PASSWORD 'matkhau_manh';
+GRANT pg_monitor TO db_o11y;
+GRANT pg_read_all_stats TO db_o11y;
+ALTER ROLE db_o11y SET pg_stat_statements.track = 'none';  -- không track query của chính user monitor
+2. Bước 2: Cập nhật config Alloy (quan trọng nhất)
+Thay config cũ của bạn bằng config dưới (kết hợp 2 component):
+# ================== POSTGRES EXPORTER (cho metrics pg_stat_statements) ==================
+prometheus.exporter.postgres "main" {
+  data_source_name = "postgres://db_o11y:matkhau_manh@localhost:5432/your_db"
+
+  enabled_collectors = ["stat_statements"]
+
+  stat_statements {
+    exclude_users     = ["db_o11y"]
+    exclude_databases = ["template0", "template1"]
+  }
+}
+
+# ================== DATABASE OBSERVABILITY (logs + query samples + explain) ==================
+database_observability.postgres "main" {
+  data_source_name = "postgres://db_o11y:matkhau_manh@localhost:5432/your_db"
+
+  # Bật đầy đủ collector để có grouping + samples
+  enable_collectors = ["query_details", "query_samples", "explain_plans", "schema_details"]
+
+  forward_to = [loki.relabel.postgres.receiver]   # gửi log structured vào Loki
+  targets    = prometheus.exporter.postgres.main.targets   # expose metrics
+}
+
+# ================== RELABEL + GỬI VÀO PROMETHEUS + LOKI ==================
+loki.relabel "postgres" {
+  forward_to = [loki.write.loki.receiver]
+
+  rule {
+    target_label = "job"
+    replacement  = "integrations/postgres"
+  }
+}
+
+discovery.relabel "postgres" {
+  targets = database_observability.postgres.main.targets
+
+  rule {
+    target_label = "job"
+    replacement  = "integrations/postgres"
+  }
+  rule {
+    target_label = "instance"
+    replacement  = "your-pg-instance"
+  }
+}
+
+prometheus.scrape "postgres" {
+  targets    = discovery.relabel.postgres.output
+  job_name   = "integrations/postgres"
+  forward_to = [prometheus.remote_write.your_prometheus.receiver]  # hoặc prometheus.write nếu bạn dùng write
+}
+
+# Loki write (giữ nguyên như cũ)
+loki.write "loki" { ... }
+Khởi động lại Alloy → lúc này bạn có:
+Metrics (Prometheus): pg_stat_statements_* → đã gom nhóm query sẵn, có total_time, calls, mean_time...
+Logs (Loki): từng query chi tiết (kể cả fail/hủy) + query samples
+3. Bước 3: Tạo bảng Top 10 query trong Grafana (giống CloudWatch)
+Tạo Panel Table mới, chọn Datasource = Prometheus:
+Query (PromQL) cho Top 10 query chậm nhất theo tổng thời gian:
+topk(10,
+  sum by (query) (
+    increase(pg_stat_statements_total_time_seconds_total[1h])
+  )
+)
+Hoặc theo thời gian trung bình:
+topk(10,
+  avg by (query) (
+    increase(pg_stat_statements_total_time_seconds_total[1h]) 
+    / increase(pg_stat_statements_calls_total[1h])
+  )
+)
+Columns gợi ý:
+Query (normalized)
+Calls (số lần chạy)
+Total Time (giây)
+Avg Time (giây)
+Rows (số record trả về)
+Bạn có thể thêm:
+Error rate từ Loki: {job="integrations/postgres"} | json | level="ERROR" | count_over_time(...)
+Kết quả: Bảng Top 10 query nhóm (giống hệt CloudWatch), có thể sort theo Total Time / Avg Time, click để xem Explain Plan, Samples, Wait Events...
+Mẹo hay
+Muốn giữ lịch sử lâu dài → tăng pg_stat_statements.max và dùng recording rule trong Prometheus để downsample.
+Nếu bạn muốn giao diện đẹp như Grafana Cloud Database Observability (có sẵn Queries Overview), thì chỉ cần migrate sang Grafana Cloud (rất dễ, chỉ đổi endpoint).
+Với self-hosted thì bạn tự build dashboard 5 phút là xong, hoặc import JSON dashboard “PostgreSQL Query Statistics” từ grafana.com.
+Bạn copy config trên thay vào file Alloy của bạn rồi restart là chạy ngay.
+Nếu gặp lỗi (ví dụ “pg_stat_statements not found” hoặc metric không xuất hiện), paste log Alloy đây mình fix tiếp nhé! 🚀
