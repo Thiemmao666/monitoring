@@ -111,3 +111,59 @@ Nếu bạn muốn giao diện đẹp như Grafana Cloud Database Observability 
 Với self-hosted thì bạn tự build dashboard 5 phút là xong, hoặc import JSON dashboard “PostgreSQL Query Statistics” từ grafana.com.
 Bạn copy config trên thay vào file Alloy của bạn rồi restart là chạy ngay.
 Nếu gặp lỗi (ví dụ “pg_stat_statements not found” hoặc metric không xuất hiện), paste log Alloy đây mình fix tiếp nhé! 🚀
+
+
+
+✅ Đúng rồi! Đây là toàn bộ lệnh ALTER SYSTEM để áp dụng ngay lập tức mà không cần sửa file postgresql.conf thủ công.
+Bạn chỉ cần copy-paste toàn bộ khối lệnh dưới đây vào pgAdmin / psql (kết nối với user superuser như postgres) và chạy một lần:
+-- ====================== ÁP DỤNG TOÀN BỘ CẤU HÌNH LOGGING ======================
+
+ALTER SYSTEM SET logging_collector = on;
+ALTER SYSTEM SET log_directory = 'log';
+ALTER SYSTEM SET log_filename = 'postgresql-%Y-%m-%d.log';
+ALTER SYSTEM SET log_file_mode = '0640';
+ALTER SYSTEM SET log_rotation_age = '1d';
+
+-- Log TẤT CẢ query + duration
+ALTER SYSTEM SET log_min_duration_statement = 0;
+ALTER SYSTEM SET log_statement = 'none';
+ALTER SYSTEM SET log_duration = on;
+
+-- Log lỗi, fail, cancel
+ALTER SYSTEM SET log_min_messages = 'WARNING';
+ALTER SYSTEM SET log_min_error_statement = 'ERROR';
+
+-- Prefix đẹp để Alloy parse dễ dàng
+ALTER SYSTEM SET log_line_prefix = '%t [%p]: user=%u,db=%d,app=%a,client=%h ';
+
+-- Các log bổ sung
+ALTER SYSTEM SET log_checkpoints = on;
+ALTER SYSTEM SET log_connections = on;
+ALTER SYSTEM SET log_disconnections = on;
+
+-- ====================== ÁP DỤNG NGAY ======================
+SELECT pg_reload_conf();
+
+-- Kiểm tra xem đã áp dụng chưa
+SHOW log_min_duration_statement;
+SHOW log_line_prefix;
+Sau khi chạy xong bạn làm gì?
+Chạy lệnh trên → Postgres sẽ tự reload cấu hình (không cần restart service).
+Kiểm tra log folder:
+ls -l /var/lib/postgresql/*/log/     # hoặc đường dẫn log_directory của bạn
+Bạn sẽ thấy file postgresql-2026-04-14.log (hoặc ngày hôm nay) đã bắt đầu ghi query.
+Test thử bằng cách chạy 1 query chậm trong database:
+SELECT pg_sleep(2);
+→ Mở file log ra xem đã có dòng query + duration chưa.
+Lưu ý nhỏ
+log_directory = 'log' → nó sẽ tạo thư mục log bên trong data_directory của Postgres (thường là /var/lib/postgresql/16/main/log/ trên Ubuntu).
+Nếu bạn muốn log ra đường dẫn tuyệt đối (khuyến nghị), thay bằng:
+ALTER SYSTEM SET log_directory = '/var/log/postgresql';
+rồi tạo folder và cấp quyền trước:
+sudo mkdir -p /var/log/postgresql
+sudo chown postgres:postgres /var/log/postgresql
+sudo chmod 0750 /var/log/postgresql
+Bạn chạy xong khối lệnh trên rồi cho mình biết kết quả:
+Có lỗi gì không?
+Hoặc paste ra 5–10 dòng đầu của file log mới để mình kiểm tra xem Alloy sau này parse có ngon không.
+Cứ paste đây, mình hỗ trợ tiếp ngay! 🚀
