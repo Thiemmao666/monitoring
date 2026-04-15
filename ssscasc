@@ -1,0 +1,5 @@
+ VEX documents. To learn more, visit https://bitnami.com/enterprise
+postgresql-repmgr 15:00:57.23 INFO  ==> 
+postgresql-repmgr 15:00:57.25 INFO  ==> ** Starting PostgreSQL with Replication Manager setup **
+postgresql-repmgr 15:00:57.29 INFO  ==> Validating settings in REPMGR_* env vars...
+postgresql-repmgr 15:00:57.30 ERROR ==> The node network name is required. Set the environment variable REPMGR_NODE_NETWORK_NAME with the node network name.
