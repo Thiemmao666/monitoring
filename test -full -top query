@@ -1,0 +1,145 @@
+✅ ĐÃ HIỂU RÕ!
+Bạn đang chạy Kubernetes + Bitnami PostgreSQL version 16 (Helm chart).
+Đây là hướng dẫn từ A → Z dành riêng cho môi trường K8s (không dùng file config thủ công như bare-metal). Tôi sẽ hướng dẫn cài mới hoàn toàn cho phần Postgres + Alloy.
+1. Cập nhật Bitnami PostgreSQL Helm chart (quan trọng nhất)
+Edit values.yaml của release Postgres (hoặc tạo file postgres-values.yaml mới):
+# ====================== PG_STAT_STATEMENTS (bắt buộc) ======================
+postgresqlSharedPreloadLibraries: "pg_stat_statements"
+
+primary:
+  extendedConfiguration: |
+    # pg_stat_statements
+    pg_stat_statements.track = 'all'
+    pg_stat_statements.track_utility = on
+    pg_stat_statements.max = 10000
+    track_activity_query_size = 4096
+
+    # Logging TẤT CẢ query (như bạn muốn)
+    log_min_duration_statement = 0
+    log_statement = 'none'
+    log_duration = on
+    log_min_messages = 'WARNING'
+    log_min_error_statement = 'ERROR'
+    log_line_prefix = '%t [%p]: user=%u,db=%d,app=%a,client=%h '
+    log_checkpoints = on
+    log_connections = on
+    log_disconnections = on
+
+    # Tùy chọn logging khác
+    logging_collector = on
+    log_filename = 'postgresql-%Y-%m-%d.log'
+    log_rotation_age = '1d'
+
+# ====================== User monitor (nếu chưa có) ======================
+auth:
+  username: "postgres"          # superuser mặc định của Bitnami
+  # password: "..."             # giữ nguyên password hiện tại
+
+# (Nếu bạn muốn init script tự động tạo extension + user monitor)
+primary:
+  initdb:
+    scripts:
+      01-enable-stat-statements.sql: |
+        CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+        CREATE USER db_o11y WITH PASSWORD 'MatKhauManh2026!';
+        GRANT pg_monitor TO db_o11y;
+        GRANT pg_read_all_stats TO db_o11y;
+        GRANT pg_read_all_data TO db_o11y;
+        ALTER ROLE db_o11y SET pg_stat_statements.track = 'none';
+Áp dụng:
+helm upgrade <ten-release-postgres> oci://registry-1.docker.io/bitnamicharts/postgresql \
+  -f postgres-values.yaml \
+  --namespace <namespace-cua-postgres> \
+  --atomic
+→ Pod Postgres sẽ restart tự động. Chờ pod Ready (khoảng 30-60s).
+2. Kiểm tra Postgres sau upgrade
+# Vào pod Postgres
+kubectl exec -it <postgres-pod> -- psql -U postgres
+
+# Kiểm tra
+SHOW shared_preload_libraries;
+SHOW pg_stat_statements.track;
+SELECT * FROM pg_stat_statements LIMIT 5;
+Nếu thấy extension và metric → OK.
+3. Cấu hình Grafana Alloy trên K8s (River config)
+Giả sử bạn đã deploy Alloy qua Helm (grafana-alloy hoặc bitnami/grafana-alloy).
+Tạo/update ConfigMap chứa file River (hoặc edit Helm values của Alloy).
+File config Alloy (river):
+# Secret DSN (khuyến nghị)
+local.file "postgres_dsn" {
+  filename  = "/etc/alloy/postgres_dsn.secret"   # mount secret vào pod Alloy
+  is_secret = true
+}
+
+# 1. Prometheus Exporter (pg_stat_statements metrics)
+prometheus.exporter.postgres "main" {
+  data_source_names = [local.file.postgres_dsn.content]
+
+  enabled_collectors = ["stat_statements"]
+
+  stat_statements {
+    exclude_users     = ["db_o11y"]
+    include_query     = true
+    limit             = 1000
+  }
+}
+
+# 2. Database Observability (logs + query samples + explain)
+database_observability.postgres "main" {
+  data_source_name = local.file.postgres_dsn.content
+  forward_to       = [loki.relabel.postgres.receiver]
+  targets          = prometheus.exporter.postgres.main.targets
+
+  enable_collectors = ["query_details", "query_samples", "explain_plans"]
+
+  exclude_users     = ["db_o11y"]
+}
+
+# 3. Discovery + Scrape (Alloy tự discover service Postgres)
+discovery.kubernetes "postgres" {
+  role = "endpoints"
+  namespaces {
+    names = ["<namespace-cua-postgres>"]
+  }
+  selectors {
+    role  = "endpoints"
+    label = "app.kubernetes.io/name=postgresql"   # label của Bitnami Postgres
+  }
+}
+
+prometheus.scrape "postgres" {
+  targets    = discovery.kubernetes.postgres.targets
+  job_name   = "integrations/postgres"
+  forward_to = [prometheus.write.main.receiver]
+}
+
+# 4. Loki + Prometheus write (giữ nguyên theo stack của bạn)
+loki.relabel "postgres" {
+  forward_to = [loki.write.main.receiver]
+  rule {
+    target_label = "job"
+    replacement  = "integrations/postgres"
+  }
+}
+
+prometheus.write "main" { ... }   # giữ nguyên
+loki.write "main" { ... }         # giữ nguyên
+Mount secret DSN (nội dung file secret):
+postgresql://db_o11y:MatKhauManh2026!@<postgres-service>.<namespace>.svc.cluster.local:5432/<dbname>?sslmode=disable
+Restart Alloy pod sau khi update config.
+4. Kiểm tra & Test
+Prometheus Targets → tìm job integrations/postgres → phải UP.
+Query trong Prometheus:
+pg_stat_statements_calls_total
+pg_stat_statements_total_time_seconds_total
+Test query chậm:
+SELECT pg_sleep(3);
+Chờ 30-60 giây là metric xuất hiện.
+Dashboard Top 10 query (giống CloudWatch)
+Trong Grafana (Prometheus datasource):
+topk(10, sum by (query) (increase(pg_stat_statements_total_time_seconds_total[5m])))
+Bạn làm theo từng bước trên (bắt đầu từ bước 1: update Postgres values.yaml).
+Sau khi upgrade Postgres xong, paste output của lệnh:
+kubectl get pods -n <ns> -l app.kubernetes.io/name=postgresql
+và kết quả SHOW shared_preload_libraries; để mình check tiếp.
+Cứ làm xong bước nào báo mình biết, mình hỗ trợ ngay! 🚀
