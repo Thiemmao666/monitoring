@@ -1,0 +1,7 @@
+PS C:\Users\ba.dung>  ssh -D 443 -f -N scloud@107.113.53.4 -p 8082
+scloud@107.113.53.4's password:
+Permission denied, please try again.
+scloud@107.113.53.4's password:
+bind [127.0.0.1]:443: Permission denied
+channel_setup_fwd_listener_tcpip: cannot listen to port: 443
+Could not request local forwarding.
