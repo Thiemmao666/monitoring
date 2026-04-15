@@ -3,3 +3,35 @@ postgresql-repmgr 15:00:57.23 INFO  ==>
 postgresql-repmgr 15:00:57.25 INFO  ==> ** Starting PostgreSQL with Replication Manager setup **
 postgresql-repmgr 15:00:57.29 INFO  ==> Validating settings in REPMGR_* env vars...
 postgresql-repmgr 15:00:57.30 ERROR ==> The node network name is required. Set the environment variable REPMGR_NODE_NETWORK_NAME with the node network name.
+
+
+
+postgresql-repmgr 15:57:35.69 INFO  ==> Starting PostgreSQL in background...
+pg_ctl: another server might be running; trying to start server anyway
+server starting
+2026-04-15 08:57:35 GMT::@:[136]: LOG:  pgaudit extension initialized
+2026-04-15 08:57:35 GMT::@:[136]: LOG:  redirecting log output to logging collector process
+2026-04-15 08:57:35 GMT::@:[136]: HINT:  Future log output will appear in directory "/opt/bitnami/postgresql/logs".
+2026-04-15 08:57:35 GMT::@:[136]: LOG:  starting PostgreSQL 16.3 on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14) 12.2.0, 64-bit
+2026-04-15 08:57:35 GMT::@:[136]: LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-04-15 08:57:35 GMT::@:[136]: LOG:  listening on IPv6 address "::", port 5432
+2026-04-15 08:57:35 GMT::@:[136]: LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+2026-04-15 08:57:35 GMT::@:[142]: LOG:  database system was interrupted; last known up at 2026-04-15 08:57:23 GMT
+2026-04-15 08:57:36 GMT::@:[142]: LOG:  database system was not properly shut down; automatic recovery in progress
+2026-04-15 08:57:36 GMT::@:[142]: LOG:  invalid record length at 0/40003E8: expected at least 24, got 0
+2026-04-15 08:57:36 GMT::@:[142]: LOG:  redo is not required
+2026-04-15 08:57:36 GMT::@:[140]: LOG:  checkpoint starting: end-of-recovery immediate wait
+2026-04-15 08:57:36 GMT::@:[140]: LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.003 s, sync=0.001 s, total=0.011 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/40003E8, redo lsn=0/40003E8
+2026-04-15 08:57:36 GMT::@:[136]: LOG:  database system is ready to accept connections
+2026-04-15 08:57:36 GMT:127.0.0.1(50968):[unknown]@[unknown]:[148]: LOG:  connection received: host=127.0.0.1 port=50968
+postgresql-repmgr 15:57:36.74 INFO  ==> ** Starting repmgrd **
+[2026-04-15 15:57:36] [NOTICE] repmgrd (repmgrd 5.4.1) starting up
+2026-04-15 08:57:36 GMT:10.244.6.25(52074):[unknown]@[unknown]:[151]: LOG:  connection received: host=10.244.6.25 port=52074
+2026-04-15 08:57:36 GMT:10.244.6.25(52074):repmgr@repmgr:[151]: LOG:  connection authenticated: identity="repmgr" method=md5 (/opt/bitnami/postgresql/conf/pg_hba.conf:1)
+2026-04-15 08:57:36 GMT:10.244.6.25(52074):repmgr@repmgr:[151]: LOG:  connection authorized: user=repmgr database=repmgr application_name=repmgr
+2026-04-15 08:57:36 GMT:10.244.6.25(52074):repmgr@repmgr:[151]: LOG:  duration: 0.532 ms  statement: SET synchronous_commit TO 'local'
+[2026-04-15 15:57:36] [ERROR] repmgr extension not found on this node
+[2026-04-15 15:57:36] [DETAIL] repmgr extension is available but not installed in database "repmgr"
+[2026-04-15 15:57:36] [HINT] check that this node is part of a repmgr cluster
+2026-04-15 08:57:36 GMT:10.244.6.25(52074):repmgr@repmgr:[151]: LOG:  duration: 9.102 ms  statement:      SELECT ae.name, e.extname,            ae.default_version,            (((FLOOR(ae.default_version::NUMERIC)::INT) * 10000) + (ae.default_version::NUMERIC - FLOOR(ae.default_version::NUMERIC)::INT) * 1000)::INT AS available,            ae.installed_version,            (((FLOOR(ae.installed_version::NUMERIC)::INT) * 10000) + (ae.installed_version::NUMERIC - FLOOR(ae.installed_version::NUMERIC)::INT) * 1000)::INT AS installed      FROM pg_catalog.pg_available_extensions ae LEFT JOIN pg_catalog.pg_extension e        ON e.extname=ae.name        WHERE ae.name='repmgr' 
+2026-04-15 08:57:36 GMT:10.244.6.25(52074):repmgr@repmgr:[151]: LOG:  disconnection: session time: 0:00:00.036 user=repmgr database=repmgr host=10.244.6.25 port=52074
