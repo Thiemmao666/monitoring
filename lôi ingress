@@ -1,0 +1,5 @@
+a@a:~$ curl -I http://grafana-test.mcc-stg.svmcdevops.com:80
+HTTP/1.1 307 Temporary Redirect
+Content-Type: text/html; charset=utf-8
+Location: https://grafana-test.mcc-stg.svmcdevops.com/
+Date: Thu, 16 Apr 2026 06:51:26 GMT
