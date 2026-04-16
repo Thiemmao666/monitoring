@@ -1,0 +1,17 @@
+ts=2026-04-16T04:12:52.947575811Z level=info msg="finished complete graph evaluation" controller_path=/ controller_id="" trace_id=a430a8f6f48d03dbc5bb2d2f87ffd68f duration=17.634208ms
+
+Error: /etc/alloy/config.alloy:14:5: unrecognized attribute name "exclude_users"
+
+13 |   stat_statements {
+14 |     exclude_users     = ["db_o11y"]
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+15 |     include_query     = true
+
+Error: /etc/alloy/config.alloy:20:22: ["postgresql://db_o11y:MatKhauManh2026!" + "@postgres-0.postgres-headless.molo.svc.cluster.local:5432/postgres?sslmode=disable"] should be capsule, got array
+
+19 | database_observability.postgres "main" {
+20 |   data_source_name = ["postgresql://db_o11y:MatKhauManh2026!"+"@postgres-0.postgres-headless.molo.svc.cluster.local:5432/postgres?sslmode=disable"]
+   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+21 |   forward_to       = [loki.relabel.postgres.receiver]
+ts=2026-04-16T04:12:52.94799981Z level=error msg="failed to evaluate config" controller_path=/ controller_id="" node=database_observability.postgres.main err="decoding configuration: /etc/alloy/config.alloy:20:22: [\"postgresql://db_o11y:MatKhauManh2026!\" + \"@postgres-0.postgres-headless.molo.svc.cluster.local:5432/postgres?sslmode=disable\"] should be capsule, got array"
+ts=2026-04-16T04:12:52.948041624Z level=debug msg="finished node evaluation" controller_path=/ controller_id="" node_id=database_observability.postgres.main duration=286.153µs
