@@ -183,3 +183,9 @@ loki.relabel "postgres" {
     target_label  = "namespace"
   }
 }
+
+
+loki.source.kubernetes "postgres_logs" {
+  targets    = discovery.kubernetes.postgres.targets
+  forward_to = [loki.relabel.postgres.receiver]
+}
