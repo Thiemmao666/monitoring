@@ -143,3 +143,43 @@ Sau khi upgrade Postgres xong, paste output của lệnh:
 kubectl get pods -n <ns> -l app.kubernetes.io/name=postgresql
 và kết quả SHOW shared_preload_libraries; để mình check tiếp.
 Cứ làm xong bước nào báo mình biết, mình hỗ trợ ngay! 🚀
+
+
+
+
+# =============================================================================
+loki.relabel "postgres" {
+  forward_to = [loki.write.main.receiver]
+
+  # job name
+  rule {
+    source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+    regex         = "postgresql"
+    target_label  = "job"
+    replacement   = "postgres-logs"
+  }
+
+  # pod name (🔥 tránh duplicate)
+  rule {
+    source_labels = ["__meta_kubernetes_pod_name"]
+    target_label  = "pod"
+  }
+
+  # container
+  rule {
+    source_labels = ["__meta_kubernetes_container_name"]
+    target_label  = "container"
+  }
+
+  # node
+  rule {
+    source_labels = ["__meta_kubernetes_node_name"]
+    target_label  = "node"
+  }
+
+  # namespace
+  rule {
+    source_labels = ["__meta_kubernetes_namespace"]
+    target_label  = "namespace"
+  }
+}
