@@ -1,0 +1,120 @@
+▶
+2026-04-18 22:45:07.743
+
+
+Line:
+level="info" queryid="7173918425042594662" datname="test" table="lock_test" validated="true"
+▶
+2026-04-18 22:45:07.743
+
+
+Line:
+level="info" queryid="7173918425042594662" querytext="select * from lock_test where id =$1" datname="test"
+▶
+2026-04-18 22:45:07.739
+
+
+Line:
+level="info" queryid="7173918425042594662" datname="test" table="lock_test" validated="true"
+▶
+2026-04-18 22:45:07.739
+
+
+Line:
+level="info" queryid="7173918425042594662" querytext="select * from lock_test where id =$1" datname="test"
+▶
+2026-04-18 22:45:07.297
+
+
+Line:
+level="info" queryid="7173918425042594662" datname="test" table="lock_test" validated="true"
+▶
+2026-04-18 22:45:07.297
+
+
+Line:
+level="info" queryid="7173918425042594662" querytext="select * from lock_test where id =$1" datname="test"
+▶
+2026-04-18 22:45:06.843
+
+
+Line:
+level="info" queryid="7173918425042594662" datname="test" table="lock_test" validated="true"
+▶
+2026-04-18 22:45:06.843
+
+
+Line:
+level="info" queryid="7173918425042594662" querytext="select * from lock_test where id =$1" datname="test"
+▶
+2026-04-18 22:44:26.657
+
+
+Line:
+level="info" queryid="7173918425042594662" datname="test" table="lock_test" validated="true"
+▶
+2026-04-18 22:44:26.657
+
+
+Line:
+level="info" queryid="7173918425042594662" querytext="select * from lock_test where id =$1" datname="test"
+▶
+2026-04-18 22:44:08.558
+
+
+Line:
+level="info" queryid="7173918425042594662" datname="test" table="lock_test" validated="true"
+▶
+2026-04-18 22:44:08.558
+
+
+Line:
+level="info" queryid="7173918425042594662" querytext="select * from lock_test where id =$1" datname="test"
+▶
+2026-04-18 22:44:07.763
+
+
+Line:
+level="info" queryid="7173918425042594662" datname="test" table="lock_test" validated="true"
+▶
+2026-04-18 22:44:07.763
+
+
+Line:
+level="info" queryid="7173918425042594662" querytext="select * from lock_test where id =$1" datname="test"
+▶
+2026-04-18 22:44:07.547
+
+
+Line:
+level="info" queryid="7173918425042594662" datname="test" table="lock_test" validated="true"
+▶
+2026-04-18 22:44:07.547
+
+
+Line:
+level="info" queryid="7173918425042594662" querytext="select * from lock_test where id =$1" datname="test"
+▶
+2026-04-18 22:44:06.839
+
+
+Line:
+level="info" queryid="7173918425042594662" datname="test" table="lock_test" validated="true"
+▶
+2026-04-18 22:44:06.839
+
+
+Line:
+level="info" queryid="7173918425042594662" querytext="select * from lock_test where id =$1" datname="test"
+▶
+2026-04-18 22:43:26.679
+
+
+Line:
+level="info" queryid="7173918425042594662" datname="test" table="lock_test" validated="true"
+▶
+2026-04-18 22:43:26.679
+
+
+Line:
+level="info" queryid="7173918425042594662" querytext="select * from lock_test where id =$1" datname="test"
