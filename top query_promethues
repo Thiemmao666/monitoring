@@ -167,3 +167,27 @@ Bạn chạy xong khối lệnh trên rồi cho mình biết kết quả:
 Có lỗi gì không?
 Hoặc paste ra 5–10 dòng đầu của file log mới để mình kiểm tra xem Alloy sau này parse có ngon không.
 Cứ paste đây, mình hỗ trợ tiếp ngay! 🚀
+
+
+# Thu thập raw log từ Postgres (event-driven, chạy ngay khi query xong)
+loki.source.kubernetes "postgres_logs" {
+  targets = discovery.kubernetes.postgres.targets   # hoặc dùng file nếu mount volume
+  forward_to = [loki.process.postgres_logs.receiver]
+}
+
+loki.process "postgres_logs" {
+  forward_to = [loki.write.main.receiver]
+
+  # Parse log Postgres thành structured
+  stage.regex {
+    expression = `(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) .* user=(?P<user>\S+),db=(?P<db>\S+).* duration: (?P<duration>\d+\.\d+) ms.* statement: (?P<query>.+)`
+  }
+  stage.labels {
+    values = {
+      user     = "user"
+      database = "db"
+      duration = "duration"
+      query    = "query"
+    }
+  }
+}
