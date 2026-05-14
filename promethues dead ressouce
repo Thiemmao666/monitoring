@@ -1,0 +1,19 @@
+      Reason:    Error
+      Message:   ="A lockfile from a previous execution already existed. It was replaced" component=tsdb file=/prometheus/lock
+time=2026-05-14T01:00:06.238Z level=INFO source=tls_config.go:347 msg="Listening on" component=web address=[::]:9090
+time=2026-05-14T01:00:06.238Z level=INFO source=tls_config.go:386 msg="TLS is disabled." component=web http2=false address=[::]:9090
+time=2026-05-14T01:00:06.239Z level=INFO source=main.go:1100 msg="Stopping scrape discovery manager..."
+time=2026-05-14T01:00:06.239Z level=INFO source=main.go:1114 msg="Stopping notify discovery manager..."
+time=2026-05-14T01:00:06.239Z level=INFO source=manager.go:190 msg="Stopping rule manager..." component="rule manager"
+time=2026-05-14T01:00:06.240Z level=INFO source=manager.go:206 msg="Rule manager stopped" component="rule manager"
+time=2026-05-14T01:00:06.240Z level=INFO source=main.go:1151 msg="Stopping scrape manager..."
+time=2026-05-14T01:00:06.240Z level=INFO source=main.go:1110 msg="Notify discovery manager stopped"
+time=2026-05-14T01:00:06.240Z level=INFO source=main.go:1096 msg="Scrape discovery manager stopped"
+time=2026-05-14T01:00:06.240Z level=INFO source=manager.go:540 msg="Stopping notification manager..." component=notifier
+time=2026-05-14T01:00:06.240Z level=INFO source=manager.go:282 msg="Draining any remaining notifications..." component=notifier
+time=2026-05-14T01:00:06.240Z level=INFO source=manager.go:288 msg="Remaining notifications drained" component=notifier
+time=2026-05-14T01:00:06.240Z level=INFO source=main.go:1143 msg="Scrape manager stopped"
+time=2026-05-14T01:00:06.240Z level=INFO source=manager.go:176 msg="Starting rule manager..." component="rule manager"
+time=2026-05-14T01:00:06.240Z level=INFO source=manager.go:218 msg="Notification manager stopped" component=notifier
+time=2026-05-14T01:00:06.240Z level=INFO source=main.go:1421 msg="Notifier manager stopped"
+time=2026-05-14T01:00:06.240Z level=ERROR source=main.go:1431 msg="Fatal error" err="opening storage failed: /prometheus/chunks_head/000046: invalid magic number 0"
