@@ -1,0 +1,17 @@
+ts=2026-05-14T23:37:14.966485237Z level=error msg="non-recoverable error" component_path=/ component_id=prometheus.remote_write.endpoint subcomponent=rw remote_name=0d780f url=http://kube-prometheus-prometheus:9090/api/v1/write failedSampleCount=245 failedHistogramCount=0 failedExemplarCount=1 err="server returned HTTP status 400 Bad Request: out of order sample\n"
+
+
+time=2026-05-14T23:29:34.274Z level=INFO source=warnings.go:70 msg="v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice" component=k8s_client_runtime
+time=2026-05-14T23:30:14.763Z level=ERROR source=write_handler.go:305 msg="Out of order sample from remote write" component=web err="out of order sample" series="{__name__=\"target_info\"}" timestamp=1778801410847
+time=2026-05-14T23:31:14.790Z level=ERROR source=write_handler.go:305 msg="Out of order sample from remote write" component=web err="out of order sample" series="{__name__=\"target_info\"}" timestamp=1778801470847
+time=2026-05-14T23:32:14.817Z level=ERROR source=write_handler.go:305 msg="Out of order sample from remote write" component=web err="out of order sample" series="{__name__=\"target_info\"}" timestamp=1778801530847
+time=2026-05-14T23:33:14.846Z level=ERROR source=write_handler.go:305 msg="Out of order sample from remote write" component=web err="out of order sample" series="{__name__=\"target_info\"}" timestamp=1778801590848
+time=2026-05-14T23:34:14.873Z level=ERROR source=write_handler.go:305 msg="Out of order sample from remote write" component=web err="out of order sample" series="{__name__=\"target_info\"}" timestamp=1778801650847
+time=2026-05-14T23:34:40.629Z level=INFO source=warnings.go:70 msg="v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice" component=k8s_client_runtime
+time=2026-05-14T23:35:14.912Z level=ERROR source=write_handler.go:305 msg="Out of order sample from remote write" component=web err="out of order sample" series="{__name__=\"target_info\"}" timestamp=1778801710847
+time=2026-05-14T23:35:33.412Z level=INFO source=warnings.go:70 msg="v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice" component=k8s_client_runtime
+time=2026-05-14T23:35:35.276Z level=INFO source=warnings.go:70 msg="v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice" component=k8s_client_runtime
+time=2026-05-14T23:35:40.571Z level=INFO source=warnings.go:70 msg="v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice" component=k8s_client_runtime
+time=2026-05-14T23:36:14.937Z level=ERROR source=write_handler.go:305 msg="Out of order sample from remote write" component=web err="out of order sample" series="{__name__=\"target_info\"}" timestamp=1778801770847
+time=2026-05-14T23:37:14.966Z level=ERROR source=write_handler.go:305 msg="Out of order sample from remote write" component=web err="out of order sample" series="{__name__=\"target_info\"}" timestamp=1778801830847
+time=2026-05-14T23:38:14.996Z level=ERROR source=write_handler.go:305 msg="Out of order sample from remote write" component=web err="out of order sample" series="{__name__=\"target_info\"}" timestamp=1778801890847
