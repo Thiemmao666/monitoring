@@ -1,0 +1,65 @@
+ts=2026-05-25T02:32:52.295891792Z level=warn caller=/workspace/pkg/operator/statefulset_reporter.go:304 msg="skipping because the statefulset couldn't be found" component=alertmanager-controller policy=none
+
+
+2026-05-25 09:36:13.150
+error
+E0525 02:36:13.150456       1 stateful_set.go:432] error syncing StatefulSet molo/alertmanager-kube-prometheus-stack-alertmanager, requeuing: StatefulSet.apps "alertmanager-kube-prometheus-stack-alertmanager" is invalid: status.currentReplicas: Invalid value: -1: must be greater than or equal to 0
+
+2026-05-25 09:36:11.183
+error
+E0525 02:36:11.182838       1 stateful_set.go:432] error syncing StatefulSet molo/prometheus-kube-prometheus-stack-prometheus, requeuing: StatefulSet.apps "prometheus-kube-prometheus-stack-prometheus" is invalid: status.currentReplicas: Invalid value: -1: must be greater than or equal to 0
+
+2026-05-25 09:36:05.769
+error
+E0525 02:36:05.768320       1 stateful_set.go:432] error syncing StatefulSet molo/prometheus-kube-prometheus-stack-prometheus, requeuing: StatefulSet.apps "prometheus-kube-prometheus-stack-prometheus" is invalid: status.currentReplicas: Invalid value: -1: must be greater than or equal to 0
+
+2026-05-25 09:36:00.349
+error
+E0525 02:36:00.348340       1 stateful_set.go:432] error syncing StatefulSet molo/prometheus-kube-prometheus-stack-prometheus, requeuing: StatefulSet.apps "prometheus-kube-prometheus-stack-prometheus" is invalid: status.currentReplicas: Invalid value: -1: must be greater than or equal to 0
+
+2026-05-25 09:35:54.738
+error
+E0525 02:35:54.736256       1 stateful_set.go:432] error syncing StatefulSet molo/prometheus-kube-prometheus-stack-prometheus, requeuing: StatefulSet.apps "prometheus-kube-prometheus-stack-prometheus" is invalid: status.currentReplicas: Invalid value: -1: must be greater than or equal to 0
+
+2026-05-25 09:35:49.681
+error
+E0525 02:35:49.679234       1 stateful_set.go:432] error syncing StatefulSet molo/prometheus-kube-prometheus-stack-prometheus, requeuing: StatefulSet.apps "prometheus-kube-prometheus-stack-prometheus" is invalid: status.currentReplicas: Invalid value: -1: must be greater than or equal to 0
+
+2026-05-25 09:35:48.025
+error
+E0525 02:35:48.024448       1 stateful_set.go:432] error syncing StatefulSet test-molo/alertmanager-kube-prometheus-alertmanager, requeuing: StatefulSet.apps "alertmanager-kube-prometheus-alertmanager" is invalid: status.currentReplicas: Invalid value: -1: must be greater than or equal to 0
+
+2026-05-25 09:35:44.671
+error
+E0525 02:35:44.664990       1 stateful_set.go:432] error syncing StatefulSet molo/prometheus-kube-prometheus-stack-prometheus, requeuing: StatefulSet.apps "prometheus-kube-prometheus-stack-prometheus" is invalid: status.currentReplicas: Invalid value: -1: must be greater than or equal to 0
+
+2026-05-25 09:35:39.354
+error
+E0525 02:35:39.352117       1 stateful_set.go:432] error syncing StatefulSet molo/prometheus-kube-prometheus-stack-prometheus, requeuing: StatefulSet.apps "prometheus-kube-prometheus-stack-prometheus" is invalid: status.currentReplicas: Invalid value: -1: must be greater than or equal to 0
+
+2026-05-25 09:35:37.041
+error
+E0525 02:35:37.041366       1 stateful_set.go:432] error syncing StatefulSet molo/alertmanager-kube-prometheus-stack-alertmanager, requeuing: StatefulSet.apps "alertmanager-kube-prometheus-stack-alertmanager" is invalid: status.currentReplicas: Invalid value: -1: must be greater than or equal to 0
+
+2026-05-25 09:35:34.943
+error
+E0525 02:35:34.943149       1 stateful_set.go:432] error syncing StatefulSet molo/prometheus-kube-prometheus-stack-prometheus, requeuing: StatefulSet.apps "prometheus-kube-prometheus-stack-prometheus" is invalid: status.currentReplicas: Invalid value: -1: must be greater than or equal to 0
+
+2026-05-25 09:35:30.451
+error
+E0525 02:35:30.451689       1 stateful_set.go:432] error syncing StatefulSet molo/prometheus-kube-prometheus-stack-prometheus, requeuing: StatefulSet.apps "prometheus-kube-prometheus-stack-prometheus" is invalid: status.currentReplicas: Invalid value: -1: must be greater than or equal to 0
+
+2026-05-25 09:35:25.596
+error
+E0525 02:35:25.596265       1 stateful_set.go:432] error syncing StatefulSet molo/prometheus-kube-prometheus-stack-prometheus, requeuing: StatefulSet.apps "prometheus-kube-prometheus-stack-prometheus" is invalid: status.currentReplicas: Invalid value: -1: must be greater than or equal to 0
+
+2026-05-25 09:35:23.529
+I0525 02:35:23.529307       1 job_controller.go:566] "enqueueing job" logger="job-controller" key="rook-ceph/rook-ceph-osd-prepare-stg-master-eqm"
+
+2026-05-25 09:35:20.034
+error
+E0525 02:35:20.032273       1 stateful_set.go:432] error syncing StatefulSet molo/prometheus-kube-prometheus-stack-prometheus, requeuing: StatefulSet.apps "prometheus-kube-prometheus-stack-prometheus" is invalid: status.currentReplicas: Invalid value: -1: must be greater than or equal to 0
+
+2026-05-25 09:35:17.630
+error
+E0525 02:35:17.629763       1 stateful_set.go:432] error syncing StatefulSet test-molo/prometheus-kube-prometheus-prometheus, requeuing: StatefulSet.apps "prometheus-kube-prometheus-prometheus" is invalid: status.currentReplicas: Invalid value: -1: must be greater than or equal to 0
