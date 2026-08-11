@@ -1,0 +1,148 @@
+# ============================================================
+# SERVICE IDENTITY
+# ============================================================
+
+OTEL_SERVICE_NAME=order-service
+
+OTEL_RESOURCE_ATTRIBUTES=\
+service.namespace=production,\
+service.version=1.0.0,\
+deployment.environment=production
+
+
+# ============================================================
+# OPENTELEMETRY - TRACES + METRICS
+# ============================================================
+
+# Alloy OTLP endpoint
+OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy.monitoring.svc.cluster.local:4317
+
+# Current OTel Java agent 2.x supports http/protobuf by default.
+# Use grpc explicitly if Alloy exposes OTLP gRPC on 4317.
+OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+
+# Enable traces + metrics
+OTEL_TRACES_EXPORTER=otlp
+OTEL_METRICS_EXPORTER=otlp
+
+# Disable OTel logs if Loki/Alloy handles logs separately
+OTEL_LOGS_EXPORTER=none
+
+# How often metrics are exported
+OTEL_METRIC_EXPORT_INTERVAL=15000
+
+# Trace sampling
+# Production example: 10%
+OTEL_TRACES_SAMPLER=parentbased_traceidratio
+OTEL_TRACES_SAMPLER_ARG=0.10
+
+
+# ============================================================
+# OPENTELEMETRY JAVA AGENT
+# ============================================================
+
+# Pyroscope OTel Java extension
+OTEL_JAVAAGENT_EXTENSIONS=/opt/otel/pyroscope-otel-javaagent-extension.jar
+
+# Agent logging
+OTEL_JAVAAGENT_LOGGING=simple
+
+# Useful during troubleshooting:
+# OTEL_LOG_LEVEL=debug
+
+
+# ============================================================
+# PYROSCOPE
+# ============================================================
+
+PYROSCOPE_APPLICATION_NAME=order-service
+
+# Pyroscope server
+PYROSCOPE_SERVER_ADDRESS=http://pyroscope.monitoring.svc.cluster.local:4040
+
+# Start profiler automatically
+PYROSCOPE_AGENT_ENABLED=true
+
+# Start profiling from OTel/Pyroscope extension
+OTEL_PYROSCOPE_START_PROFILING=true
+
+# ============================================================
+# PROFILE FORMAT
+# ============================================================
+
+PYROSCOPE_FORMAT=jfr
+
+
+# ============================================================
+# PROFILING
+# ============================================================
+
+# CPU profile:
+#   itimer
+#   cpu
+#
+# Wall profile:
+#   wall
+#
+# For Trace -> Profile correlation use CPU.
+PYROSCOPE_PROFILER_EVENT=itimer
+
+# Sampling interval
+PYROSCOPE_PROFILING_INTERVAL=10ms
+
+# Upload profile periodically
+PYROSCOPE_UPLOAD_INTERVAL=15s
+
+# Maximum Java stack depth
+PYROSCOPE_JAVA_STACK_DEPTH_MAX=2048
+
+
+# ============================================================
+# OPTIONAL PROFILING
+# ============================================================
+
+# Allocation profiling
+# Be careful in production because it increases overhead.
+# PYROSCOPE_PROFILER_ALLOC=512k
+
+# Lock profiling
+# PYROSCOPE_PROFILER_LOCK=10ms
+
+
+# ============================================================
+# TRACE <-> PROFILE CORRELATION
+# ============================================================
+
+# Add profile URL to span
+OTEL_PYROSCOPE_ADD_PROFILE_URL=false
+
+# Add baseline profile URL
+OTEL_PYROSCOPE_ADD_PROFILE_BASELINE_URL=false
+
+
+# ============================================================
+# PYROSCOPE LABELS / KUBERNETES IDENTITY
+# ============================================================
+
+PYROSCOPE_LABELS=\
+service_name=order-service,\
+namespace=production
+
+
+# ============================================================
+# OPTIONAL AUTHENTICATION
+# ============================================================
+
+# Only needed if Pyroscope requires authentication.
+# PYROSCOPE_BASIC_AUTH_USER=
+# PYROSCOPE_BASIC_AUTH_PASSWORD=
+
+# Only needed for multi-tenant Pyroscope.
+# PYROSCOPE_TENANT_ID=
+
+
+# ============================================================
+# DEBUG
+# ============================================================
+
+# PYROSCOPE_LOG_LEVEL=debug
